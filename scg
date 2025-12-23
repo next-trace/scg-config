@@ -4,7 +4,7 @@ set -e
 # SCG Support Tool
 
 # Variables
-GO_VERSION="1.25.0"
+GO_VERSION="1.25.5"
 
 # Tools
 GOLANGCI_LINT="golangci-lint"

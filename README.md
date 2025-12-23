@@ -27,7 +27,95 @@ go get github.com/next-trace/scg-config
 
 The central type is `*config.Config`, created via `config.New()`. After loading configuration (from files and/or environment), call `Reload()` to refresh the internal getter snapshot with the latest data.
 
-### Loading from files and environment
+### ENV-first Configuration (12-Factor)
+
+SCG Config follows the [12-factor app](https://12factor.net/config) methodology with **environment variables as the primary configuration source**. Config files are **completely optional** and should only be used for local development or when explicitly needed.
+
+#### Environment-Only Mode (Production Default)
+
+The library works out of the box with environment variables only—no config file required:
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/next-trace/scg-config/config"
+	"github.com/next-trace/scg-config/contract"
+)
+
+func main() {
+	// Set environment variables (in production, these come from your deployment environment)
+	// Note: Use a prefix (e.g., APP_) and the format: PREFIX_KEY_NAME
+	os.Setenv("APP_APP_NAME", "ProductionApp")
+	os.Setenv("APP_APP_PORT", "8080")
+	os.Setenv("APP_DATABASE_HOST", "db.example.com")
+
+	// Create config instance
+	cfg := config.New()
+
+	// Load from environment with prefix - strips prefix and converts to dot notation
+	// APP_APP_NAME → app.name, APP_DATABASE_HOST → database.host
+	if err := cfg.EnvLoader().LoadFromEnv("APP"); err != nil {
+		log.Fatalf("failed to load env: %v", err)
+	}
+
+	// Reload to refresh the getter snapshot
+	if err := cfg.Reload(); err != nil {
+		log.Fatalf("failed to reload: %v", err)
+	}
+
+	// Access values using dot notation
+	name, _ := cfg.Get("app.name", contract.String)
+	fmt.Println("App Name:", name.(string))
+
+	port, _ := cfg.Get("app.port", contract.String)
+	fmt.Println("Port:", port.(string))
+
+	dbHost, _ := cfg.Get("database.host", contract.String)
+	fmt.Println("Database Host:", dbHost.(string))
+}
+```
+
+**Key points:**
+- Environment variables work **without any config files** - just call `EnvLoader().LoadFromEnv("PREFIX")`
+- The prefix is stripped and remaining parts are converted to lowercase dot notation
+- Underscores in env var names map to dots in config keys
+- Example with prefix "APP": `APP_APP_NAME` → `app.name`, `APP_DATABASE_MAX_CONNECTIONS` → `database.max.connections`
+- No config file needed = no file lookup = no errors about missing files = production safe
+- **This is the recommended approach for production deployments**
+
+#### Optional File Config (Development/Local Only)
+
+Config files are opt-in and should only be used when explicitly configured (typically for local development):
+
+```go
+cfg := config.New()
+
+// Option 1: Load a specific file
+if err := cfg.FileLoader().LoadFromFile("./config/app.yaml"); err != nil {
+	log.Fatalf("failed to load config file: %v", err)
+}
+
+// Option 2: Load all files from a directory
+if err := cfg.FileLoader().LoadFromDirectory("./config"); err != nil {
+	log.Fatalf("failed to load config directory: %v", err)
+}
+
+if err := cfg.Reload(); err != nil {
+	log.Fatalf("failed to reload: %v", err)
+}
+```
+
+**Important:**
+- If a config file is set but missing/unreadable, an error is returned (not a panic)
+- Environment variables **always override** file values (12-factor principle)
+- File watching/reloading only works when files are explicitly loaded
+
+### Loading from files and environment (Combined Example)
 
 ```go
 package main

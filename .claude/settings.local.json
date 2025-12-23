@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go test:*)",
+      "Bash(grep:*)",
+      "Bash(go build:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(/home/hossein/go/bin/golangci-lint run:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

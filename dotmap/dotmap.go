@@ -42,33 +42,33 @@ func resolvePath(current interface{}, parts []string, caseInsensitive bool) inte
 // resolveStep attempts to resolve one step in the path.
 func resolveStep(current interface{}, part string, caseInsensitive bool) (interface{}, bool) {
 	// Handle array indexing first (same for both case modes)
-	if idx, err := strconv.Atoi(part); err == nil {
-		return resolveArrayIndex(current, idx)
+	if index, err := strconv.Atoi(part); err == nil {
+		return resolveArrayIndex(current, index)
 	}
 
 	// Handle map types
-	switch curr := current.(type) {
+	switch typedMap := current.(type) {
 	case map[string]interface{}:
-		return resolveStringMap(curr, part, caseInsensitive)
+		return resolveStringMap(typedMap, part, caseInsensitive)
 	case map[string]string:
-		return resolveStringStringMap(curr, part, caseInsensitive)
+		return resolveStringStringMap(typedMap, part, caseInsensitive)
 	case map[interface{}]interface{}:
-		return resolveInterfaceMap(curr, part, caseInsensitive)
+		return resolveInterfaceMap(typedMap, part, caseInsensitive)
 	}
 
 	return nil, false
 }
 
 // resolveArrayIndex handles array/slice indexing for both []interface{} and []string.
-func resolveArrayIndex(current interface{}, idx int) (interface{}, bool) {
-	switch curr := current.(type) {
+func resolveArrayIndex(current interface{}, index int) (interface{}, bool) {
+	switch typedSlice := current.(type) {
 	case []interface{}:
-		if idx >= 0 && idx < len(curr) {
-			return curr[idx], true
+		if index >= 0 && index < len(typedSlice) {
+			return typedSlice[index], true
 		}
 	case []string:
-		if idx >= 0 && idx < len(curr) {
-			return curr[idx], true
+		if index >= 0 && index < len(typedSlice) {
+			return typedSlice[index], true
 		}
 	}
 
@@ -78,14 +78,14 @@ func resolveArrayIndex(current interface{}, idx int) (interface{}, bool) {
 // resolveStringMap handles map[string]interface{} with optional case-insensitive lookup.
 func resolveStringMap(configData map[string]interface{}, key string, caseInsensitive bool) (interface{}, bool) {
 	if !caseInsensitive {
-		val, exists := configData[key]
+		value, exists := configData[key]
 
-		return val, exists
+		return value, exists
 	}
 
-	for k, v := range configData {
-		if strings.EqualFold(k, key) {
-			return v, true
+	for mapKey, mapValue := range configData {
+		if strings.EqualFold(mapKey, key) {
+			return mapValue, true
 		}
 	}
 
@@ -95,14 +95,14 @@ func resolveStringMap(configData map[string]interface{}, key string, caseInsensi
 // resolveStringStringMap handles map[string]string with optional case-insensitive lookup.
 func resolveStringStringMap(configData map[string]string, key string, caseInsensitive bool) (interface{}, bool) {
 	if !caseInsensitive {
-		val, exists := configData[key]
+		value, exists := configData[key]
 
-		return val, exists
+		return value, exists
 	}
 
-	for k, v := range configData {
-		if strings.EqualFold(k, key) {
-			return v, true
+	for mapKey, mapValue := range configData {
+		if strings.EqualFold(mapKey, key) {
+			return mapValue, true
 		}
 	}
 
@@ -112,14 +112,14 @@ func resolveStringStringMap(configData map[string]string, key string, caseInsens
 // resolveInterfaceMap handles map[interface{}]interface{} with optional case-insensitive lookup.
 func resolveInterfaceMap(configData map[interface{}]interface{}, key string, caseInsensitive bool) (interface{}, bool) {
 	if !caseInsensitive {
-		val, exists := configData[key]
+		value, exists := configData[key]
 
-		return val, exists
+		return value, exists
 	}
 
-	for k, v := range configData {
-		if ks, ok := k.(string); ok && strings.EqualFold(ks, key) {
-			return v, true
+	for mapKey, mapValue := range configData {
+		if keyString, ok := mapKey.(string); ok && strings.EqualFold(keyString, key) {
+			return mapValue, true
 		}
 	}
 

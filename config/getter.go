@@ -3,9 +3,9 @@ package config
 import (
 	"time"
 
+	"github.com/next-trace/scg-config/configerrors"
 	"github.com/next-trace/scg-config/contract"
 	"github.com/next-trace/scg-config/dotmap"
-	"github.com/next-trace/scg-config/errors"
 	"github.com/next-trace/scg-config/utils"
 )
 
@@ -20,14 +20,15 @@ func NewGetter(config map[string]any) *Getter {
 	return &Getter{config: config}
 }
 
-// Get Core logic: flat key lookup first, dot-notation fallback.
-func (g *Getter) Get(key string, typ contract.KeyType) (any, error) {
-	if key == "" || g.config == nil {
-		return nil, errors.ErrKeyNotFound
+// Get returns the value associated with key, converted to the provided KeyType.
+// It first attempts a flat key lookup, then falls back to dot-notation path resolution.
+func (gt *Getter) Get(key string, typ contract.KeyType) (any, error) {
+	if key == "" || gt.config == nil {
+		return nil, configerrors.ErrKeyNotFound
 	}
 
-	if val, ok := g.config[key]; ok {
-		result, err := tryTypeCast(val, typ)
+	if value, ok := gt.config[key]; ok {
+		result, err := tryTypeCast(value, typ)
 		if err != nil {
 			return nil, err
 		}
@@ -35,137 +36,138 @@ func (g *Getter) Get(key string, typ contract.KeyType) (any, error) {
 		return result, nil
 	}
 
-	val := dotmap.Resolve(g.config, key)
-	if val == nil {
-		return nil, errors.ErrKeyNotFound
+	value := dotmap.Resolve(gt.config, key)
+	if value == nil {
+		return nil, configerrors.ErrKeyNotFound
 	}
 
-	val, err := tryTypeCast(val, typ)
+	value, err := tryTypeCast(value, typ)
 	if err != nil {
-		return nil, errors.ErrWrongType
+		return nil, configerrors.ErrWrongType
 	}
 
-	return val, nil
+	return value, nil
 }
 
 // GetKey returns the raw value for key as any, or nil when not found.
-func (g *Getter) GetKey(key string) any {
-	val, _ := g.Get(key, contract.String)
+func (gt *Getter) GetKey(key string) any {
+	value, _ := gt.Get(key, contract.String)
 
-	return val
+	return value
 }
 
 // GetString returns the string value for key, or "" if not found/convertible.
-func (g *Getter) GetString(key string) string {
-	v, _ := g.Get(key, contract.String)
-	if s, ok := v.(string); ok {
-		return s
+func (gt *Getter) GetString(key string) string {
+	value, _ := gt.Get(key, contract.String)
+	if stringValue, ok := value.(string); ok {
+		return stringValue
 	}
 
 	return ""
 }
 
 // GetInt returns the int value for key, or 0 if not found/convertible.
-func (g *Getter) GetInt(key string) int {
-	v, _ := g.Get(key, contract.Int)
-	if i, ok := v.(int); ok {
-		return i
+func (gt *Getter) GetInt(key string) int {
+	value, _ := gt.Get(key, contract.Int)
+	if intValue, ok := value.(int); ok {
+		return intValue
 	}
 
 	return 0
 }
 
 // GetBool returns the bool value for key, or false if not found/convertible.
-func (g *Getter) GetBool(key string) bool {
-	v, _ := g.Get(key, contract.Bool)
-	if b, ok := v.(bool); ok {
-		return b
+func (gt *Getter) GetBool(key string) bool {
+	value, _ := gt.Get(key, contract.Bool)
+	if boolValue, ok := value.(bool); ok {
+		return boolValue
 	}
 
 	return false
 }
 
 // GetFloat64 returns the float64 value for key, or 0 if not found/convertible.
-func (g *Getter) GetFloat64(key string) float64 {
-	v, _ := g.Get(key, contract.Float64)
-	if f, ok := v.(float64); ok {
-		return f
+func (gt *Getter) GetFloat64(key string) float64 {
+	value, _ := gt.Get(key, contract.Float64)
+	if floatValue, ok := value.(float64); ok {
+		return floatValue
 	}
 
 	return 0
 }
 
 // GetDuration returns the time.Duration value for key, or 0 if not found/convertible.
-func (g *Getter) GetDuration(key string) time.Duration {
-	v, _ := g.Get(key, contract.Duration)
-	if d, ok := v.(time.Duration); ok {
-		return d
+func (gt *Getter) GetDuration(key string) time.Duration {
+	value, _ := gt.Get(key, contract.Duration)
+	if duration, ok := value.(time.Duration); ok {
+		return duration
 	}
 
 	return 0
 }
 
 // GetInt64 returns the int64 value for key, or 0 if not found/convertible.
-func (g *Getter) GetInt64(key string) int64 {
-	v, _ := g.Get(key, contract.Int64)
-	if i, ok := v.(int64); ok {
-		return i
+func (gt *Getter) GetInt64(key string) int64 {
+	value, _ := gt.Get(key, contract.Int64)
+	if int64Value, ok := value.(int64); ok {
+		return int64Value
 	}
 
 	return 0
 }
 
 // GetStringSlice returns a []string for key, or nil if not found/convertible.
-func (g *Getter) GetStringSlice(key string) []string {
-	v, _ := g.Get(key, contract.StringSlice)
-	if s, ok := v.([]string); ok {
-		return s
+func (gt *Getter) GetStringSlice(key string) []string {
+	value, _ := gt.Get(key, contract.StringSlice)
+	if slice, ok := value.([]string); ok {
+		return slice
 	}
 
 	return nil
 }
 
 // GetStringMap returns a map[string]interface{} for key, or nil if not found/convertible.
-func (g *Getter) GetStringMap(key string) map[string]interface{} {
-	v, _ := g.Get(key, contract.Map)
-	if m, ok := v.(map[string]interface{}); ok {
-		return m
+func (gt *Getter) GetStringMap(key string) map[string]interface{} {
+	value, _ := gt.Get(key, contract.Map)
+	if mapValue, ok := value.(map[string]interface{}); ok {
+		return mapValue
 	}
 
 	return nil
 }
 
 // GetStringMapString returns a map[string]string for key, or nil if not found/convertible.
-func (g *Getter) GetStringMapString(key string) map[string]string {
-	v, _ := g.Get(key, contract.Map)
-	if m, ok := v.(map[string]string); ok {
-		return m
+func (gt *Getter) GetStringMapString(key string) map[string]string {
+	value, _ := gt.Get(key, contract.Map)
+	if mapValue, ok := value.(map[string]string); ok {
+		return mapValue
 	}
 
 	return nil
 }
 
 // GetTime returns the time.Time value for key, or the zero time if not found/convertible.
-func (g *Getter) GetTime(key string) time.Time {
-	v, _ := g.Get(key, contract.Time)
-	if t, ok := v.(time.Time); ok {
-		return t
+func (gt *Getter) GetTime(key string) time.Time {
+	value, _ := gt.Get(key, contract.Time)
+	if timeValue, ok := value.(time.Time); ok {
+		return timeValue
 	}
 
 	return time.Time{}
 }
 
-// HasKey Improved HasKey: flat first, then dot notation.
-func (g *Getter) HasKey(key string) bool {
-	if key == "" || g.config == nil {
+// HasKey checks if a key exists in the configuration.
+// It first attempts a flat key lookup, then falls back to dot-notation path resolution.
+func (gt *Getter) HasKey(key string) bool {
+	if key == "" || gt.config == nil {
 		return false
 	}
 
-	if _, ok := g.config[key]; ok {
+	if _, ok := gt.config[key]; ok {
 		return true
 	}
 
-	return dotmap.Resolve(g.config, key) != nil
+	return dotmap.Resolve(gt.config, key) != nil
 }
 
 // TypeConverter defines a function that converts a value to a specific type.
@@ -182,103 +184,103 @@ var typeConverters = map[contract.KeyType]struct {
 		converter: func(val any) (any, error) {
 			return utils.ToInt(val)
 		},
-		errorType: errors.ErrNotInt,
+		errorType: configerrors.ErrNotInt,
 	},
 	contract.Int32: {
 		converter: func(val any) (any, error) {
 			return utils.ToInt32(val)
 		},
-		errorType: errors.ErrNotInt32,
+		errorType: configerrors.ErrNotInt32,
 	},
 	contract.Int64: {
 		converter: func(val any) (any, error) {
 			return utils.ToInt64(val)
 		},
-		errorType: errors.ErrNotInt64,
+		errorType: configerrors.ErrNotInt64,
 	},
 	contract.Uint: {
 		converter: func(val any) (any, error) {
 			return utils.ToUint(val)
 		},
-		errorType: errors.ErrNotUint,
+		errorType: configerrors.ErrNotUint,
 	},
 	contract.Uint32: {
 		converter: func(val any) (any, error) {
 			return utils.ToUint32(val)
 		},
-		errorType: errors.ErrNotUint32,
+		errorType: configerrors.ErrNotUint32,
 	},
 	contract.Uint64: {
 		converter: func(val any) (any, error) {
 			return utils.ToUint64(val)
 		},
-		errorType: errors.ErrNotUint64,
+		errorType: configerrors.ErrNotUint64,
 	},
 	contract.Float32: {
 		converter: func(val any) (any, error) {
 			return utils.ToFloat32(val)
 		},
-		errorType: errors.ErrNotFloat32,
+		errorType: configerrors.ErrNotFloat32,
 	},
 	contract.Float64: {
 		converter: func(val any) (any, error) {
 			return utils.ToFloat64(val)
 		},
-		errorType: errors.ErrNotFloat64,
+		errorType: configerrors.ErrNotFloat64,
 	},
 	contract.String: {
 		converter: func(val any) (any, error) {
 			return utils.ToString(val)
 		},
-		errorType: errors.ErrNotString,
+		errorType: configerrors.ErrNotString,
 	},
 	contract.Bool: {
 		converter: func(val any) (any, error) {
 			return utils.ToBool(val)
 		},
-		errorType: errors.ErrNotBool,
+		errorType: configerrors.ErrNotBool,
 	},
 	contract.StringSlice: {
 		converter: func(val any) (any, error) {
 			return utils.ToStringSlice(val)
 		},
-		errorType: errors.ErrNotStringSlice,
+		errorType: configerrors.ErrNotStringSlice,
 	},
 	contract.Map: {
 		converter: func(val any) (any, error) {
 			return utils.ToMap(val)
 		},
-		errorType: errors.ErrNotMap,
+		errorType: configerrors.ErrNotMap,
 	},
 	contract.Time: {
 		converter: func(val any) (any, error) {
 			return utils.ToTime(val)
 		},
-		errorType: errors.ErrNotTime,
+		errorType: configerrors.ErrNotTime,
 	},
 	contract.Duration: {
 		converter: func(val any) (any, error) {
 			return utils.ToDuration(val)
 		},
-		errorType: errors.ErrNotDuration,
+		errorType: configerrors.ErrNotDuration,
 	},
 	contract.Bytes: {
 		converter: func(val any) (any, error) {
 			return utils.ToBytes(val)
 		},
-		errorType: errors.ErrNotBytes,
+		errorType: configerrors.ErrNotBytes,
 	},
 	contract.UUID: {
 		converter: func(val any) (any, error) {
 			return utils.ToUUID(val)
 		},
-		errorType: errors.ErrNotUUID,
+		errorType: configerrors.ErrNotUUID,
 	},
 	contract.URL: {
 		converter: func(val any) (any, error) {
 			return utils.ToURL(val)
 		},
-		errorType: errors.ErrNotURL,
+		errorType: configerrors.ErrNotURL,
 	},
 }
 
@@ -287,7 +289,7 @@ var typeConverters = map[contract.KeyType]struct {
 func tryTypeCast(val any, typ contract.KeyType) (any, error) {
 	converterInfo, exists := typeConverters[typ]
 	if !exists {
-		return nil, errors.ErrUnknownType
+		return nil, configerrors.ErrUnknownType
 	}
 
 	value, err := converterInfo.converter(val)

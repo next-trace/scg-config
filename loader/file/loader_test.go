@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/next-trace/scg-config/config"
+	"github.com/next-trace/scg-config/configerrors"
 	"github.com/next-trace/scg-config/contract"
-	"github.com/next-trace/scg-config/errors"
 	"github.com/next-trace/scg-config/loader/file"
 	"github.com/next-trace/scg-config/provider/viper"
 )
@@ -122,7 +122,7 @@ func TestLoadFromDirectory_NonExistentDirectory_Error(t *testing.T) {
 	ldr := file.NewFileLoader(provider)
 	err := ldr.LoadFromDirectory(filepath.Join(t.TempDir(), "does-not-exist"))
 	require.Error(t, err)
-	require.ErrorIs(t, err, errors.ErrFailedReadDirectory)
+	require.ErrorIs(t, err, configerrors.ErrFailedReadDirectory)
 }
 
 // --- Fake provider to force MergeConfigMap error path
@@ -189,7 +189,7 @@ func TestFileLoader_LoadFromFile_NoProvider_Error(t *testing.T) {
 	ldr := file.NewFileLoader(nil)
 	err := ldr.LoadFromFile(filepath.Join(t.TempDir(), "x.yaml"))
 	require.Error(t, err)
-	require.ErrorIs(t, err, errors.ErrBackendProviderHasNoConfig)
+	require.ErrorIs(t, err, configerrors.ErrBackendProviderHasNoConfig)
 }
 
 func TestFileLoader_LoadFromDirectory_NoProvider_Error(t *testing.T) {
@@ -197,5 +197,5 @@ func TestFileLoader_LoadFromDirectory_NoProvider_Error(t *testing.T) {
 	ldr := file.NewFileLoader(nil)
 	err := ldr.LoadFromDirectory(t.TempDir())
 	require.Error(t, err)
-	require.ErrorIs(t, err, errors.ErrBackendProviderHasNoConfig)
+	require.ErrorIs(t, err, configerrors.ErrBackendProviderHasNoConfig)
 }
