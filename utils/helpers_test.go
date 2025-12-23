@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
+	"github.com/next-trace/scg-config/configerrors"
 	"github.com/next-trace/scg-config/contract"
-	"github.com/next-trace/scg-config/errors"
 	"github.com/next-trace/scg-config/utils"
 )
 
@@ -65,7 +65,7 @@ func TestToInt_SuccessAndErrors(t *testing.T) {
 	require.Equal(t, 30, v)
 
 	_, err = utils.ToInt("x")
-	require.ErrorIs(t, err, errors.ErrNotInt)
+	require.ErrorIs(t, err, configerrors.ErrNotInt)
 	_, err = utils.ToInt(float64(3.14))
 	require.NoError(t, err)
 }
@@ -83,9 +83,9 @@ func TestToInt32_SuccessAndErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int32(13), v)
 	_, err = utils.ToInt32("abc")
-	require.ErrorIs(t, err, errors.ErrNotInt32)
+	require.ErrorIs(t, err, configerrors.ErrNotInt32)
 	_, err = utils.ToInt32(time.Second)
-	require.ErrorIs(t, err, errors.ErrNotInt32)
+	require.ErrorIs(t, err, configerrors.ErrNotInt32)
 }
 
 func TestToInt64_SuccessAndErrors(t *testing.T) {
@@ -101,7 +101,7 @@ func TestToInt64_SuccessAndErrors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(88), v)
 	_, err = utils.ToInt64("bad")
-	require.ErrorIs(t, err, errors.ErrNotInt64)
+	require.ErrorIs(t, err, configerrors.ErrNotInt64)
 }
 
 func TestToUintVariants(t *testing.T) {
@@ -117,9 +117,9 @@ func TestToUintVariants(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint(7), u)
 	_, err = utils.ToUint(-1)
-	require.ErrorIs(t, err, errors.ErrNotUint)
+	require.ErrorIs(t, err, configerrors.ErrNotUint)
 	_, err = utils.ToUint("-2")
-	require.ErrorIs(t, err, errors.ErrNotUint)
+	require.ErrorIs(t, err, configerrors.ErrNotUint)
 
 	u32, err := utils.ToUint32(uint32(3))
 	require.NoError(t, err)
@@ -131,9 +131,9 @@ func TestToUintVariants(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint32(5), u32)
 	_, err = utils.ToUint32(-1)
-	require.ErrorIs(t, err, errors.ErrNotUint32)
+	require.ErrorIs(t, err, configerrors.ErrNotUint32)
 	_, err = utils.ToUint32("bad")
-	require.ErrorIs(t, err, errors.ErrNotUint32)
+	require.ErrorIs(t, err, configerrors.ErrNotUint32)
 
 	u64, err := utils.ToUint64(uint64(10))
 	require.NoError(t, err)
@@ -145,9 +145,9 @@ func TestToUintVariants(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint64(12), u64)
 	_, err = utils.ToUint64(-1)
-	require.ErrorIs(t, err, errors.ErrNotUint64)
+	require.ErrorIs(t, err, configerrors.ErrNotUint64)
 	_, err = utils.ToUint64("bad")
-	require.ErrorIs(t, err, errors.ErrNotUint64)
+	require.ErrorIs(t, err, configerrors.ErrNotUint64)
 }
 
 func TestFloatConverters(t *testing.T) {
@@ -163,7 +163,7 @@ func TestFloatConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.InDelta(t, 2.5, f32, 0.0001)
 	_, err = utils.ToFloat32("bad")
-	require.ErrorIs(t, err, errors.ErrNotFloat32)
+	require.ErrorIs(t, err, configerrors.ErrNotFloat32)
 
 	f64, err := utils.ToFloat64(float64(3.5))
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestFloatConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.InDelta(t, 6.75, f64, 0.0001)
 	_, err = utils.ToFloat64("bad")
-	require.ErrorIs(t, err, errors.ErrNotFloat64)
+	require.ErrorIs(t, err, configerrors.ErrNotFloat64)
 }
 
 func TestBasicConverters(t *testing.T) {
@@ -185,7 +185,7 @@ func TestBasicConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "ok", s)
 	_, err = utils.ToString(1)
-	require.ErrorIs(t, err, errors.ErrNotString)
+	require.ErrorIs(t, err, configerrors.ErrNotString)
 
 	b, err := utils.ToBool(true)
 	require.NoError(t, err)
@@ -194,35 +194,35 @@ func TestBasicConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, b)
 	_, err = utils.ToBool("bad")
-	require.ErrorIs(t, err, errors.ErrNotBool)
+	require.ErrorIs(t, err, configerrors.ErrNotBool)
 
 	ss, err := utils.ToStringSlice([]any{"a", "b"})
 	require.NoError(t, err)
 	require.Equal(t, []string{"a", "b"}, ss)
 	_, err = utils.ToStringSlice([]any{"a", 2})
-	require.ErrorIs(t, err, errors.ErrNotStringInSlice)
+	require.ErrorIs(t, err, configerrors.ErrNotStringInSlice)
 	_, err = utils.ToStringSlice(42)
-	require.ErrorIs(t, err, errors.ErrNotStringSlice)
+	require.ErrorIs(t, err, configerrors.ErrNotStringSlice)
 
 	m, err := utils.ToMap(map[string]any{"k": "v"})
 	require.NoError(t, err)
 	require.Equal(t, "v", m["k"])
 	_, err = utils.ToMap(1)
-	require.ErrorIs(t, err, errors.ErrNotMap)
+	require.ErrorIs(t, err, configerrors.ErrNotMap)
 
 	tm := time.Now()
 	tt, err := utils.ToTime(tm)
 	require.NoError(t, err)
 	require.WithinDuration(t, tm, tt, time.Nanosecond)
 	_, err = utils.ToTime(1)
-	require.ErrorIs(t, err, errors.ErrNotTime)
+	require.ErrorIs(t, err, configerrors.ErrNotTime)
 
 	d := time.Second
 	dur, err := utils.ToDuration(d)
 	require.NoError(t, err)
 	require.Equal(t, d, dur)
 	_, err = utils.ToDuration(1)
-	require.ErrorIs(t, err, errors.ErrNotDuration)
+	require.ErrorIs(t, err, configerrors.ErrNotDuration)
 
 	bb, err := utils.ToBytes([]byte("x"))
 	require.NoError(t, err)
@@ -231,7 +231,7 @@ func TestBasicConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("x"), bb)
 	_, err = utils.ToBytes(1)
-	require.ErrorIs(t, err, errors.ErrNotBytes)
+	require.ErrorIs(t, err, configerrors.ErrNotBytes)
 
 	u := uuid.New()
 	uid, err := utils.ToUUID(u)
@@ -241,7 +241,7 @@ func TestBasicConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, u, uid)
 	_, err = utils.ToUUID("bad")
-	require.ErrorIs(t, err, errors.ErrNotUUID)
+	require.ErrorIs(t, err, configerrors.ErrNotUUID)
 
 	parsed, err := url.Parse("https://example.com")
 	require.NoError(t, err)
@@ -252,7 +252,7 @@ func TestBasicConverters(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "https://example.com/x", uurl.String())
 	_, err = utils.ToURL(1)
-	require.ErrorIs(t, err, errors.ErrNotURL)
+	require.ErrorIs(t, err, configerrors.ErrNotURL)
 }
 
 func TestIsSupportedConfigFile_Extensions(t *testing.T) {

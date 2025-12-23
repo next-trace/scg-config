@@ -3,6 +3,7 @@ package viper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 
@@ -11,51 +12,77 @@ import (
 
 // ConfigProvider implements contract.Provider using Viper.
 type ConfigProvider struct {
-	v *viper.Viper
+	v             *viper.Viper
+	configFileSet bool // tracks if a config file path was explicitly set
 }
 
 // NewConfigProvider returns a new ConfigProvider instance (satisfies contract.Provider).
+// It configures Viper for ENV-first operation with automatic environment variable support.
 func NewConfigProvider() *ConfigProvider {
-	return &ConfigProvider{v: viper.New()}
+	v := viper.New()
+
+	// Enable automatic environment variable reading (ENV-first, 12-factor compliant)
+	v.AutomaticEnv()
+
+	// Replace '.' and '-' with '_' in env var names for consistent key mapping
+	// e.g., "app.name" or "app-name" will match env var "APP_NAME"
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+
+	return &ConfigProvider{
+		v:             v,
+		configFileSet: false,
+	}
 }
 
 // AllSettings returns the entire config as a nested map.
-func (b *ConfigProvider) AllSettings() map[string]interface{} {
-	return b.v.AllSettings()
+func (cp *ConfigProvider) AllSettings() map[string]interface{} {
+	return cp.v.AllSettings()
 }
 
 // GetKey returns the value for a key (flat lookup only, for bootstrapping and tests).
-func (b *ConfigProvider) GetKey(key string) any {
-	return b.v.Get(key)
+func (cp *ConfigProvider) GetKey(key string) any {
+	return cp.v.Get(key)
 }
 
 // IsSet checks if a config key is present (flat lookup).
-func (b *ConfigProvider) IsSet(key string) bool {
-	return b.v.IsSet(key)
+func (cp *ConfigProvider) IsSet(key string) bool {
+	return cp.v.IsSet(key)
 }
 
 // Set sets a key in the Viper store (for tests or live editing).
-func (b *ConfigProvider) Set(key string, value any) {
-	b.v.Set(key, value)
+func (cp *ConfigProvider) Set(key string, value any) {
+	cp.v.Set(key, value)
 }
 
 // ReadInConfig reloads from file/env if supported by Viper.
-func (b *ConfigProvider) ReadInConfig() error {
-	if err := b.v.ReadInConfig(); err != nil {
+// If no config file is set, this is a no-op (environment-only mode).
+// Environment variables are always read automatically via AutomaticEnv().
+func (cp *ConfigProvider) ReadInConfig() error {
+	// Only try to read config file if one was explicitly set
+	// This implements ENV-first: environment variables work without any config file
+	if !cp.configFileSet {
+		// No config file configured - skip file reading (env-only mode)
+		// Environment variables are still available via AutomaticEnv()
+		return nil
+	}
+
+	// Config file was explicitly set - attempt to read it
+	if err := cp.v.ReadInConfig(); err != nil {
 		return fmt.Errorf("provider: failed to read config: %w", err)
 	}
 
 	return nil
 }
 
-// SetConfigFile sets which file to read.
-func (b *ConfigProvider) SetConfigFile(file string) {
-	b.v.SetConfigFile(file)
+// SetConfigFile sets which file to read and marks file config as enabled.
+func (cp *ConfigProvider) SetConfigFile(file string) {
+	cp.v.SetConfigFile(file)
+	cp.configFileSet = true
 }
 
 // MergeConfigMap merges another map into config.
-func (b *ConfigProvider) MergeConfigMap(cfg map[string]interface{}) error {
-	if err := b.v.MergeConfigMap(cfg); err != nil {
+func (cp *ConfigProvider) MergeConfigMap(configMap map[string]interface{}) error {
+	if err := cp.v.MergeConfigMap(configMap); err != nil {
 		return fmt.Errorf("provider: failed to merge config map: %w", err)
 	}
 
@@ -63,8 +90,8 @@ func (b *ConfigProvider) MergeConfigMap(cfg map[string]interface{}) error {
 }
 
 // Provider returns the underlying Viper object for advanced use.
-func (b *ConfigProvider) Provider() any {
-	return b.v
+func (cp *ConfigProvider) Provider() any {
+	return cp.v
 }
 
 // Interface assertion: this struct implements contract.Provider.

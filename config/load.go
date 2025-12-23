@@ -34,17 +34,17 @@ func (c *Config) Load(out any) error { //nolint:ireturn // returning error (an i
 	}
 
 	// Validate the populated struct using `validate` tags.
-	v := validator.New(validator.WithRequiredStructEnabled())
-	if err := v.Struct(out); err != nil {
-		var verrs validator.ValidationErrors
-		if errors.As(err, &verrs) {
+	configValidator := validator.New(validator.WithRequiredStructEnabled())
+	if err := configValidator.Struct(out); err != nil {
+		var validationErrors validator.ValidationErrors
+		if errors.As(err, &validationErrors) {
 			// Build a human-friendly error message enumerating field errors.
 			msg := "config validation failed:"
-			for _, fe := range verrs {
-				// fe.Namespace() gives full path; fe.Field() gives field name.
-				msg += fmt.Sprintf(" field '%s' failed '%s'", fe.Namespace(), fe.Tag())
-				if fe.Param() != "" {
-					msg += fmt.Sprintf("='%s'", fe.Param())
+			for _, fieldError := range validationErrors {
+				// fieldError.Namespace() gives full path; fieldError.Field() gives field name.
+				msg += fmt.Sprintf(" field '%s' failed '%s'", fieldError.Namespace(), fieldError.Tag())
+				if fieldError.Param() != "" {
+					msg += fmt.Sprintf("='%s'", fieldError.Param())
 				}
 				msg += ";"
 			}

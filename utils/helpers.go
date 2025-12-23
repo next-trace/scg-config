@@ -15,8 +15,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/next-trace/scg-config/configerrors"
 	"github.com/next-trace/scg-config/contract"
-	"github.com/next-trace/scg-config/errors"
 )
 
 const (
@@ -45,12 +45,12 @@ func ShouldProcessEnv(env, prefix string) bool {
 
 // SplitEnv splits "KEY=VALUE" into key, value.
 func SplitEnv(env string) (string, string) {
-	kv := strings.SplitN(env, "=", splitEnvParts)
-	if len(kv) != splitEnvParts {
+	parts := strings.SplitN(env, "=", splitEnvParts)
+	if len(parts) != splitEnvParts {
 		return env, ""
 	}
 
-	return kv[0], kv[1]
+	return parts[0], parts[1]
 }
 
 // StripPrefix strips prefix from key, if present.
@@ -81,7 +81,7 @@ func ToInt(val any) (int, error) {
 		return value, nil
 	case int64:
 		if value > int64(math.MaxInt) || value < int64(math.MinInt) {
-			return 0, fmt.Errorf("%w: int64 out of int range", errors.ErrNotInt)
+			return 0, fmt.Errorf("%w: int64 out of int range", configerrors.ErrNotInt)
 		}
 
 		converted := int(value)
@@ -89,7 +89,7 @@ func ToInt(val any) (int, error) {
 		return converted, nil
 	case float64:
 		if value > float64(math.MaxInt) || value < float64(math.MinInt) {
-			return 0, fmt.Errorf("%w: float64 out of int range", errors.ErrNotInt)
+			return 0, fmt.Errorf("%w: float64 out of int range", configerrors.ErrNotInt)
 		}
 
 		converted := int(value)
@@ -98,14 +98,14 @@ func ToInt(val any) (int, error) {
 	case string:
 		i, err := strconv.Atoi(value)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotInt, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotInt, err)
 		}
 
 		converted := i
 
 		return converted, nil
 	default:
-		return 0, errors.ErrNotInt
+		return 0, configerrors.ErrNotInt
 	}
 }
 
@@ -116,7 +116,7 @@ func ToInt32(val any) (int32, error) {
 		return value, nil
 	case int:
 		if value > math.MaxInt32 || value < math.MinInt32 {
-			return 0, fmt.Errorf("%w: int out of int32 range", errors.ErrNotInt32)
+			return 0, fmt.Errorf("%w: int out of int32 range", configerrors.ErrNotInt32)
 		}
 
 		return int32(value), nil
@@ -124,12 +124,12 @@ func ToInt32(val any) (int32, error) {
 		// Use ParseInt with explicit bit size to avoid potential overflow converting from int
 		int64Value, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotInt32, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotInt32, err)
 		}
 		// At this point the parsed value is guaranteed to fit into 32‑bits.
 		return int32(int64Value), nil
 	default:
-		return 0, errors.ErrNotInt32
+		return 0, configerrors.ErrNotInt32
 	}
 }
 
@@ -140,7 +140,7 @@ func ToInt64(val any) (int64, error) {
 		return value, nil
 	case int:
 		if value > math.MaxInt {
-			return 0, fmt.Errorf("%w: int out of int64 range", errors.ErrNotInt64)
+			return 0, fmt.Errorf("%w: int out of int64 range", configerrors.ErrNotInt64)
 		}
 
 		return int64(value), nil
@@ -149,12 +149,12 @@ func ToInt64(val any) (int64, error) {
 	case string:
 		intValue, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotInt64, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotInt64, err)
 		}
 
 		return intValue, nil
 	default:
-		return 0, errors.ErrNotInt64
+		return 0, configerrors.ErrNotInt64
 	}
 }
 
@@ -165,23 +165,23 @@ func ToUint(val any) (uint, error) {
 		return value, nil
 	case int:
 		if value < 0 {
-			return 0, fmt.Errorf("%w: int is negative", errors.ErrNotUint)
+			return 0, fmt.Errorf("%w: int is negative", configerrors.ErrNotUint)
 		}
 
 		return uint(value), nil
 	case string:
 		intVal, err := strconv.Atoi(value)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotUint, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotUint, err)
 		}
 
 		if intVal < 0 {
-			return 0, fmt.Errorf("%w: string is negative", errors.ErrNotUint)
+			return 0, fmt.Errorf("%w: string is negative", configerrors.ErrNotUint)
 		}
 
 		return uint(intVal), nil
 	default:
-		return 0, errors.ErrNotUint
+		return 0, configerrors.ErrNotUint
 	}
 }
 
@@ -193,19 +193,19 @@ func ToUint32(val any) (uint32, error) {
 	case int:
 		// int may be negative or exceed the maximum for uint32 on this platform
 		if value < 0 || value > math.MaxUint32 {
-			return 0, fmt.Errorf("%w: int out of uint32 range", errors.ErrNotUint32)
+			return 0, fmt.Errorf("%w: int out of uint32 range", configerrors.ErrNotUint32)
 		}
 
 		return uint32(value), nil
 	case string:
 		i, err := strconv.ParseUint(value, 10, 32)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotUint32, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotUint32, err)
 		}
 
 		return uint32(i), nil
 	default:
-		return 0, errors.ErrNotUint32
+		return 0, configerrors.ErrNotUint32
 	}
 }
 
@@ -217,19 +217,19 @@ func ToUint64(val any) (uint64, error) {
 		return value, nil
 	case int:
 		if value < 0 {
-			return 0, fmt.Errorf("%w: int is negative", errors.ErrNotUint64)
+			return 0, fmt.Errorf("%w: int is negative", configerrors.ErrNotUint64)
 		}
 
 		return uint64(value), nil
 	case string:
 		i, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotUint64, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotUint64, err)
 		}
 
 		return i, nil
 	default:
-		return 0, errors.ErrNotUint64
+		return 0, configerrors.ErrNotUint64
 	}
 }
 
@@ -240,23 +240,23 @@ func ToFloat32(val any) (float32, error) {
 		return value, nil
 	case float64:
 		if value > math.MaxFloat32 || value < -math.MaxFloat32 {
-			return 0, fmt.Errorf("%w: float64 out of float32 range", errors.ErrNotFloat32)
+			return 0, fmt.Errorf("%w: float64 out of float32 range", configerrors.ErrNotFloat32)
 		}
 
 		return float32(value), nil
 	case string:
 		floatVal, err := strconv.ParseFloat(value, 32)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotFloat32, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotFloat32, err)
 		}
 
 		if floatVal > math.MaxFloat32 || floatVal < -math.MaxFloat32 {
-			return 0, fmt.Errorf("%w: parsed float out of float32 range", errors.ErrNotFloat32)
+			return 0, fmt.Errorf("%w: parsed float out of float32 range", configerrors.ErrNotFloat32)
 		}
 
 		return float32(floatVal), nil
 	default:
-		return 0, errors.ErrNotFloat32
+		return 0, configerrors.ErrNotFloat32
 	}
 }
 
@@ -270,12 +270,12 @@ func ToFloat64(val any) (float64, error) {
 	case string:
 		f, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return 0, fmt.Errorf("%w: %w", errors.ErrNotFloat64, err)
+			return 0, fmt.Errorf("%w: %w", configerrors.ErrNotFloat64, err)
 		}
 
 		return f, nil
 	default:
-		return 0, errors.ErrNotFloat64
+		return 0, configerrors.ErrNotFloat64
 	}
 }
 
@@ -285,7 +285,7 @@ func ToString(val any) (string, error) {
 		return s, nil
 	}
 
-	return "", errors.ErrNotString
+	return "", configerrors.ErrNotString
 }
 
 // ToBool converts val to bool.
@@ -296,12 +296,12 @@ func ToBool(val any) (bool, error) {
 	case string:
 		b, err := strconv.ParseBool(value)
 		if err != nil {
-			return false, fmt.Errorf("%w: %w", errors.ErrNotBool, err)
+			return false, fmt.Errorf("%w: %w", configerrors.ErrNotBool, err)
 		}
 
 		return b, nil
 	default:
-		return false, errors.ErrNotBool
+		return false, configerrors.ErrNotBool
 	}
 }
 
@@ -316,7 +316,7 @@ func ToStringSlice(val any) ([]string, error) {
 		for idx, elem := range value {
 			s, ok := elem.(string)
 			if !ok {
-				return nil, errors.ErrNotStringInSlice
+				return nil, configerrors.ErrNotStringInSlice
 			}
 
 			result[idx] = s
@@ -324,7 +324,7 @@ func ToStringSlice(val any) ([]string, error) {
 
 		return result, nil
 	default:
-		return nil, errors.ErrNotStringSlice
+		return nil, configerrors.ErrNotStringSlice
 	}
 }
 
@@ -334,7 +334,7 @@ func ToMap(val any) (map[string]any, error) {
 		return m, nil
 	}
 
-	return nil, errors.ErrNotMap
+	return nil, configerrors.ErrNotMap
 }
 
 // ToTime converts val to time.Time.
@@ -343,7 +343,7 @@ func ToTime(val any) (time.Time, error) {
 		return t, nil
 	}
 
-	return time.Time{}, errors.ErrNotTime
+	return time.Time{}, configerrors.ErrNotTime
 }
 
 // ToDuration converts val to time.Duration.
@@ -352,7 +352,7 @@ func ToDuration(val any) (time.Duration, error) {
 		return d, nil
 	}
 
-	return 0, errors.ErrNotDuration
+	return 0, configerrors.ErrNotDuration
 }
 
 // ToBytes converts val to a byte slice.
@@ -363,7 +363,7 @@ func ToBytes(val any) ([]byte, error) {
 	case string:
 		return []byte(value), nil
 	default:
-		return nil, errors.ErrNotBytes
+		return nil, configerrors.ErrNotBytes
 	}
 }
 
@@ -375,12 +375,12 @@ func ToUUID(val any) (uuid.UUID, error) {
 	case string:
 		u, err := uuid.Parse(value)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("%w: %w", errors.ErrNotUUID, err)
+			return uuid.Nil, fmt.Errorf("%w: %w", configerrors.ErrNotUUID, err)
 		}
 
 		return u, nil
 	default:
-		return uuid.Nil, errors.ErrNotUUID
+		return uuid.Nil, configerrors.ErrNotUUID
 	}
 }
 
@@ -392,11 +392,11 @@ func ToURL(val any) (*url.URL, error) {
 	case string:
 		u, err := url.Parse(value)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errors.ErrNotURL, err)
+			return nil, fmt.Errorf("%w: %w", configerrors.ErrNotURL, err)
 		}
 
 		return u, nil
 	default:
-		return nil, errors.ErrNotURL
+		return nil, configerrors.ErrNotURL
 	}
 }

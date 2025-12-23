@@ -1,5 +1,5 @@
-// Package errors provides shared error values used by the configuration system.
-package errors
+// Package configerrors provides shared error values used by the configuration system.
+package configerrors
 
 import "errors"
 

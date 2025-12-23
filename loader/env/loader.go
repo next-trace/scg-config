@@ -4,8 +4,8 @@ package env
 import (
 	"os"
 
+	"github.com/next-trace/scg-config/configerrors"
 	"github.com/next-trace/scg-config/contract"
-	loaderErrors "github.com/next-trace/scg-config/errors"
 	"github.com/next-trace/scg-config/utils"
 )
 
@@ -21,20 +21,20 @@ func NewEnvLoader(p contract.Provider) *Loader {
 
 // LoadFromEnv loads environment variables with the given prefix into the provider.
 // Prefix is stripped and keys are normalized to dot notation (e.g. APP_NAME -> app.name).
-func (l *Loader) LoadFromEnv(prefix string) error {
-	provider := l.provider
+func (el *Loader) LoadFromEnv(prefix string) error {
+	provider := el.provider
 	if provider == nil {
-		return loaderErrors.ErrBackendProviderNotSet
+		return configerrors.ErrBackendProviderNotSet
 	}
 
 	prefix = utils.NormalizePrefix(prefix)
 
-	for _, envStr := range os.Environ() {
-		if !utils.ShouldProcessEnv(envStr, prefix) {
+	for _, envString := range os.Environ() {
+		if !utils.ShouldProcessEnv(envString, prefix) {
 			continue
 		}
 
-		key, value := utils.SplitEnv(envStr)
+		key, value := utils.SplitEnv(envString)
 		key = utils.StripPrefix(key, prefix)
 		key = utils.NormalizeEnvKey(key)
 
@@ -47,6 +47,6 @@ func (l *Loader) LoadFromEnv(prefix string) error {
 // GetProvider returns the Provider associated with the Loader.
 //
 //nolint:ireturn // returning an interface is required by the contract API
-func (l *Loader) GetProvider() contract.Provider {
-	return l.provider
+func (el *Loader) GetProvider() contract.Provider {
+	return el.provider
 }
